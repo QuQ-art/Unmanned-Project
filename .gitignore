@@ -17,3 +17,4 @@ test_model.py
 training.log
 test.py
 .idea/
+logs/

@@ -56,3 +56,44 @@ class TrainLoggerCallback(BaseCallback):
         df.to_csv(csv_path, index=False)
         if self.verbose > 0:
             print(f"[Logger] Saved training log to {csv_path}")
+
+
+class RewardComponentsCallback(BaseCallback):
+    """
+    记录每个step的奖励分量，用于分析训练过程
+    """
+    def __init__(self, csv_path, verbose=0):
+        super().__init__(verbose)
+        self.csv_path = csv_path
+        self.data = []
+
+    def _on_step(self) -> bool:
+        # 获取info中的奖励分量
+        infos = self.locals.get("infos", [])
+        if len(infos) > 0 and "reward_comps" in infos[0]:
+            comps = infos[0]["reward_comps"]
+            # 添加timestep
+            row = {"timesteps": self.num_timesteps}
+            row.update({f"r/{k}": v for k, v in comps.items() if k != "total"})
+            self.data.append(row)
+
+            # 每1000步保存一次
+            if len(self.data) % 1000 == 0:
+                self._save()
+
+        return True
+
+    def _on_training_end(self) -> None:
+        self._save()
+
+    def _save(self):
+        if len(self.data) > 0:
+            df = pd.DataFrame(self.data)
+            # 追加模式写入CSV
+            if os.path.exists(self.csv_path):
+                df.to_csv(self.csv_path, mode='a', header=False, index=False)
+            else:
+                df.to_csv(self.csv_path, index=False)
+            self.data = []  # 清空已保存的数据
+            if self.verbose > 0:
+                print(f"[RewardLogger] Saved to {self.csv_path}")
