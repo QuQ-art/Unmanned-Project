@@ -4,6 +4,7 @@
 from stable_baselines3.common.callbacks import BaseCallback
 import os
 import pandas as pd
+from collections import deque
 
 class TrainLoggerCallback(BaseCallback):
     def __init__(self, save_freq=10, save_path="../logs/single_training/", verbose=0):
@@ -97,3 +98,36 @@ class RewardComponentsCallback(BaseCallback):
             self.data = []  # 清空已保存的数据
             if self.verbose > 0:
                 print(f"[RewardLogger] Saved to {self.csv_path}")
+
+
+class BestMeanRewardCallback(BaseCallback):
+    """
+    按最近若干局平均奖励保存最佳模型。
+    """
+    def __init__(self, save_path, window_size=50, verbose=0):
+        super().__init__(verbose)
+        self.save_path = save_path
+        self.window_size = window_size
+        self.episode_rewards = deque(maxlen=window_size)
+        self.best_mean_reward = float("-inf")
+
+    def _on_step(self) -> bool:
+        infos = self.locals.get("infos", [])
+        for info in infos:
+            episode_info = info.get("episode")
+            if episode_info is None:
+                continue
+
+            self.episode_rewards.append(float(episode_info["r"]))
+            if len(self.episode_rewards) < self.window_size:
+                continue
+
+            mean_reward = sum(self.episode_rewards) / self.window_size
+            if mean_reward > self.best_mean_reward:
+                self.best_mean_reward = mean_reward
+                os.makedirs(self.save_path, exist_ok=True)
+                self.model.save(os.path.join(self.save_path, "best_mean_model"))
+                if self.verbose > 0:
+                    print(f"[BestModel] mean_reward={mean_reward:.2f}, saved best_mean_model.zip")
+
+        return True

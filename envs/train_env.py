@@ -51,13 +51,18 @@ class TrainEnv(gymnasium.Env):
         super().__init__()
 
         # Agent space bounds
-        action_upper_bound = np.ones(shape=[4], dtype=np.float64)
-        action_lower_bound = np.negative(np.ones(shape=[4], dtype=np.float64))
-        self.action_space = spaces.Box(shape=[4], dtype=np.float64, low=action_lower_bound, high=action_upper_bound)
+        action_upper_bound = np.ones(shape=[4], dtype=np.float32)
+        action_lower_bound = -np.ones(shape=[4], dtype=np.float32)
+        self.action_space = spaces.Box(shape=[4], dtype=np.float32, low=action_lower_bound, high=action_upper_bound)
 
-        observation_upper_bound = np.ones(shape=[15], dtype=np.float64)
-        observation_lower_bound = np.negative(np.ones(shape=[15], dtype=np.float64))
-        self.observation_space = spaces.Box(shape=[15], dtype=np.float64, low=observation_lower_bound, high=observation_upper_bound)
+        observation_upper_bound = np.ones(shape=[observation.OBSERVATION_SIZE], dtype=np.float32)
+        observation_lower_bound = -np.ones(shape=[observation.OBSERVATION_SIZE], dtype=np.float32)
+        self.observation_space = spaces.Box(
+            shape=[observation.OBSERVATION_SIZE],
+            dtype=np.float32,
+            low=observation_lower_bound,
+            high=observation_upper_bound,
+        )
 
         # Initialize adaptor
         self.adaptor = adaptor.NetworkAdaptor(config_path)
@@ -68,6 +73,7 @@ class TrainEnv(gymnasium.Env):
         with open(config_path, 'r') as f:
             self.config = yaml.safe_load(f)
         self.save_path = self.config["save_path"]
+        self.reset_count = 0
 
 
     def step(self, agent_action):
@@ -76,7 +82,7 @@ class TrainEnv(gymnasium.Env):
 
         # Marshal agent actions into real actions and send
         # First marshal unified actions into platform actions
-        real_action = action.marshal_action(agent_action)
+        real_action = action.marshal_action(agent_action, self.my_state, self.enemy_state, self.config)
         # Then append truncation flag to the packet and send
         send_pack = pack_action(real_action, truncated)
         self.adaptor.send_action_packet(send_pack)
@@ -111,7 +117,21 @@ class TrainEnv(gymnasium.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         self.adaptor.reconnect()
-        new_initial_packet = pack_initial(initialize.generate_initial_state())
+        init_config = dict(self.config)
+        easy_resets = int(init_config.get("curriculum_easy_resets", 0))
+        medium_resets = int(init_config.get("curriculum_medium_resets", 0))
+        if self.reset_count < easy_resets:
+            init_config["random_initial"] = False
+        elif self.reset_count < easy_resets + medium_resets:
+            init_config["random_initial"] = True
+            init_config["enemy_x_min"] = 100
+            init_config["enemy_x_max"] = 116
+            init_config["enemy_y_abs"] = 6
+            init_config["enemy_z_min"] = 49
+            init_config["enemy_z_max"] = 53
+        self.reset_count += 1
+
+        new_initial_packet = pack_initial(initialize.generate_initial_state(init_config))
         self.adaptor.send_initial_packet(new_initial_packet)
         # Get new observations and unmarshal
         original_observation = self.adaptor.get_observation_packet()

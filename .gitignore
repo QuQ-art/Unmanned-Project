@@ -18,3 +18,6 @@ training.log
 test.py
 .idea/
 logs/
+__pycache__/
+logs_simple_attack_v1/
+model_simple_attack_v1/

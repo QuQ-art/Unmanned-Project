@@ -20,8 +20,7 @@ def check_truncation(my_state, enemy_state):
     - False: 继续
     """
 
-    # 调试：打印检查过程
-    debug = True  # 改为True可以看到详细检查过程
+    debug = False
 
     # 1. 高度检查
     my_altitude = my_state[2]  # z坐标，单位为10m
@@ -36,7 +35,7 @@ def check_truncation(my_state, enemy_state):
 
     # 2. 距离检查 - 进一步放宽，允许战术机动和回头攻击
     distance = np.linalg.norm(my_state[0:3] - enemy_state[0:3])
-    if distance > 400.0:  # 距离超过4000m才终止（300→400）
+    if distance > 500.0:  # 距离超过5000m才终止
         if debug:
             print(f"Truncate: 距离过远 {distance:.2f}")
         return True

@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def generate_initial_state():
+def generate_initial_state(config=None):
     """
     初始化战机和靶机的状态
     返回格式：[我方战机12个参数, 敌方靶机12个参数]
@@ -18,7 +18,10 @@ def generate_initial_state():
     要求：初始距离 >= 1000m，即 >= 100单位
     """
 
-    # 我方战机初始状态（12个参数）
+    config = config or {}
+    random_initial = bool(config.get("random_initial", True))
+    rng = np.random.default_rng()
+
     my_initial_state = np.zeros(12, dtype=np.float64)
 
     # 我方战机位置：设置在原点附近
@@ -32,7 +35,7 @@ def generate_initial_state():
     my_initial_state[5] = 0.0      # yaw (ψ) - 朝向+x方向
 
     # 我方战机线速度：初始有一定速度
-    my_initial_state[6] = 20.0     # u - 前向速度
+    my_initial_state[6] = float(config.get("my_initial_speed", 16.0))  # u - 前向速度
     my_initial_state[7] = 0.0      # v
     my_initial_state[8] = 0.0      # w
 
@@ -41,14 +44,23 @@ def generate_initial_state():
     my_initial_state[10] = 0.0     # β
     my_initial_state[11] = 0.0     # η
 
-    # 敌方靶机初始状态
     enemy_initial_state = np.zeros(12, dtype=np.float64)
 
-    # 敌方靶机位置：固定在前方1000-1200m（符合作业要求）
-    # 作业要求：初始距离 >= 1000m (即 >= 100单位)
-    enemy_initial_state[0] = 100.0    # x坐标（1000m，最小合规距离）
-    enemy_initial_state[1] = 0.0      # y坐标
-    enemy_initial_state[2] = 50.0     # z坐标（与我方同高度500m）
+    if random_initial:
+        # 初始包会被转成 int32，所以这里使用整数位置，避免小数被截断后分布异常。
+        x_min = int(config.get("enemy_x_min", 100))
+        x_max = int(config.get("enemy_x_max", 126))
+        y_abs = int(config.get("enemy_y_abs", 12))
+        z_min = int(config.get("enemy_z_min", 47))
+        z_max = int(config.get("enemy_z_max", 55))
+
+        enemy_initial_state[0] = float(rng.integers(x_min, x_max))
+        enemy_initial_state[1] = float(rng.integers(-y_abs, y_abs + 1))
+        enemy_initial_state[2] = float(rng.integers(z_min, z_max))
+    else:
+        enemy_initial_state[0] = 100.0
+        enemy_initial_state[1] = 0.0
+        enemy_initial_state[2] = 50.0
 
     # 敌方靶机姿态：固定朝向（面对我方）
     enemy_initial_state[3] = 0.0      # roll
