@@ -13,8 +13,8 @@ from stable_baselines3.common.callbacks import CheckpointCallback, CallbackList
 from utils.callback import RewardComponentsCallback
 
 def main():
-    # 版本号：v2_refined表示v2微调版（平衡的奖励系统）
-    version = "v2_refined"
+    # 版本号：v7_fresh表示从头训练，极度放宽限制版本
+    version = "v7_fresh_ultra_relaxed"
     log_dir = f"./logs_{version}/"
     model_dir = f"./model_{version}/"
 
@@ -56,7 +56,7 @@ def main():
         env=env,
         verbose=1,
         tensorboard_log=log_dir,
-        learning_rate=3e-4,  # 学习率
+        learning_rate=1e-4,  # 降低学习率提高稳定性（3e-4→1e-4）
         n_steps=2048,  # 每次更新收集的步数
         batch_size=512,  # 批次大小
         n_epochs=10,  # 每次更新的epoch数

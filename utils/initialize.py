@@ -31,8 +31,8 @@ def generate_initial_state():
     my_initial_state[4] = 0.0      # pitch (θ)
     my_initial_state[5] = 0.0      # yaw (ψ) - 朝向+x方向
 
-    # 我方战机线速度：初始有一定速度
-    my_initial_state[6] = 20.0     # u - 前向速度
+    # 我方战机线速度：降低初始速度，给更多时间瞄准
+    my_initial_state[6] = 10.0     # u - 前向速度（从20.0降到10.0）
     my_initial_state[7] = 0.0      # v
     my_initial_state[8] = 0.0      # w
 
@@ -44,7 +44,7 @@ def generate_initial_state():
     # 敌方靶机初始状态
     enemy_initial_state = np.zeros(12, dtype=np.float64)
 
-    # 敌方靶机位置：固定在前方1000-1200m（符合作业要求）
+    # 敌方靶机位置：固定在前方1000m（符合作业要求）
     # 作业要求：初始距离 >= 1000m (即 >= 100单位)
     enemy_initial_state[0] = 100.0    # x坐标（1000m，最小合规距离）
     enemy_initial_state[1] = 0.0      # y坐标

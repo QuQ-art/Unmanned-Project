@@ -18,3 +18,10 @@ training.log
 test.py
 .idea/
 logs/
+logs_v5_from_v2_relaxed/
+logs_v5_from_v2_ultra_relaxed/
+logs_v6_from_v3_ultra_relaxed/
+logs_v7_fresh_ultra_relaxed/
+logs_v8_from_v7_finish_kill/
+model_v5_from_v2_ultra_relaxed/
+model_v7_fresh_ultra_relaxed/

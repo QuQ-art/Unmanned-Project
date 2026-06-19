@@ -29,17 +29,17 @@ def reward_components(prev_my_state, prev_enemy_state, my_state, enemy_state):
     # 上一步距离
     prev_distance = np.linalg.norm(prev_my_state[0:3] - prev_enemy_state[0:3])
 
-    # 距离减少给予奖励（势能函数）
+    # 距离减少给予奖励（势能函数）- 回到平衡版本
     distance_improvement = prev_distance - current_distance
-    comps["distance"] = distance_improvement * 3.0  # 适中提高（v2的2.0→3.0）
+    comps["distance"] = distance_improvement * 5.0  # 中等激励（10.0→5.0）
 
-    # 距离越近，基础奖励越高
-    distance_proximity_reward = np.exp(-current_distance / 50.0) * 8.0  # 适中提高（v2的5.0→8.0）
+    # 距离越近，基础奖励越高 - 中等强度
+    distance_proximity_reward = np.exp(-current_distance / 50.0) * 10.0  # 中等（20.0→10.0）
     comps["proximity"] = distance_proximity_reward
 
-    # 逃离惩罚 - 适度惩罚
+    # 逃离惩罚 - 中等惩罚
     if current_distance > prev_distance:
-        comps["escape_penalty"] = -5.0  # 适中惩罚（v2的-3.0→-5.0，v3的-10.0太重）
+        comps["escape_penalty"] = -8.0  # 中等惩罚（15.0→8.0）
     else:
         comps["escape_penalty"] = 0.0
 
@@ -76,15 +76,26 @@ def reward_components(prev_my_state, prev_enemy_state, my_state, enemy_state):
     # 注意：敌方初始血量是1000，不是100！
     enemy_hp_loss = prev_enemy_state[12] - enemy_state[12]
     if enemy_hp_loss > 0:
-        comps["damage"] = enemy_hp_loss * 100.0  # 大幅提高！（10.0→100.0）
+        comps["damage"] = enemy_hp_loss * 200.0  # 高激励攻击（300.0→200.0）
     else:
         comps["damage"] = 0.0
 
     # 敌方被击毁 - 终极目标
     if enemy_state[12] <= 0:
-        comps["kill"] = 10000.0  # 巨额奖励！（800→10000）
+        comps["kill"] = 5000.0  # 大幅提高击杀奖励（2000→5000）
     else:
         comps["kill"] = 0.0
+
+    # 新增：敌方血量很低时，强烈鼓励留在附近完成击杀
+    # 注意：血量可能是0-1范围（服务器设置）或0-1000范围
+    enemy_hp_ratio = enemy_state[12] / max(1.0, prev_enemy_state[12]) if prev_enemy_state[12] > 0 else 0
+    if enemy_state[12] > 0 and enemy_state[12] < 5.0:  # 血量很低（<5，兼容两种范围）
+        if current_distance < 30.0:  # 在300m内
+            comps["finish_kill"] = 50.0  # 大额奖励，鼓励留下
+        else:
+            comps["finish_kill"] = -20.0  # 重罚离开
+    else:
+        comps["finish_kill"] = 0.0
 
 
     # ============ 4. 回合惩罚 ============
