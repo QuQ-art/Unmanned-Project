@@ -86,5 +86,5 @@ def test_model(model_path, num_episodes=5):
     env.close()
 
 if __name__ == "__main__":
-    # 测试v7的35万步模型
-    test_model("model_v7_fresh_ultra_relaxed/model_350000_steps.zip", num_episodes=5)
+    # 测试v10的75万步模型（final_model）
+    test_model("model_v10_from_v9_no_exploit/final_model.zip", num_episodes=5)

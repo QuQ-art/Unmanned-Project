@@ -62,13 +62,13 @@ def continue_training():
 
     print("继续训练...")
     print(f"当前步数: 350,000")
-    print(f"目标步数: 1,000,000")
-    print(f"剩余步数: 650,000")
+    print(f"目标步数: 500,000")
+    print(f"剩余步数: 150,000")
     print("=" * 80)
 
     # 继续训练
     model.learn(
-        total_timesteps=650000,  # 剩余65万步
+        total_timesteps=150000,  # 先训练15万步到50万，看看效果
         progress_bar=True,
         reset_num_timesteps=False,  # 不重置timesteps计数
         log_interval=10,

@@ -39,7 +39,11 @@ def reward_components(prev_my_state, prev_enemy_state, my_state, enemy_state):
 
     # 逃离惩罚 - 中等惩罚
     if current_distance > prev_distance:
-        comps["escape_penalty"] = -8.0  # 中等惩罚（15.0→8.0）
+        # 如果敌方血量很低时逃跑，加重惩罚
+        if enemy_state[12] > 0 and enemy_state[12] < 5.0:
+            comps["escape_penalty"] = -30.0  # 残血时逃跑重罚
+        else:
+            comps["escape_penalty"] = -8.0  # 正常惩罚
     else:
         comps["escape_penalty"] = 0.0
 
@@ -88,12 +92,23 @@ def reward_components(prev_my_state, prev_enemy_state, my_state, enemy_state):
 
     # 新增：敌方血量很低时，强烈鼓励留在附近完成击杀
     # 注意：血量可能是0-1范围（服务器设置）或0-1000范围
-    enemy_hp_ratio = enemy_state[12] / max(1.0, prev_enemy_state[12]) if prev_enemy_state[12] > 0 else 0
     if enemy_state[12] > 0 and enemy_state[12] < 5.0:  # 血量很低（<5，兼容两种范围）
-        if current_distance < 30.0:  # 在300m内
-            comps["finish_kill"] = 50.0  # 大额奖励，鼓励留下
-        else:
-            comps["finish_kill"] = -20.0  # 重罚离开
+        # 只有在造成伤害时才给finish_kill奖励，防止刷分
+        if enemy_hp_loss > 0:  # 正在攻击
+            if current_distance < 30.0:  # 在300m内
+                comps["finish_kill"] = 300.0  # 巨额奖励（200→300）
+            elif current_distance < 50.0:  # 在500m内
+                comps["finish_kill"] = 100.0  # 大奖励（50→100）
+            else:
+                comps["finish_kill"] = 0.0
+        else:  # 没攻击
+            # 在附近给小奖励，鼓励靠近
+            if current_distance < 30.0:
+                comps["finish_kill"] = 20.0  # 小奖励，鼓励靠近
+            elif current_distance > 50.0:  # 离太远
+                comps["finish_kill"] = -20.0  # 加重惩罚（-10→-20）
+            else:
+                comps["finish_kill"] = 0.0  # 在附近但没打中，不惩罚
     else:
         comps["finish_kill"] = 0.0
 

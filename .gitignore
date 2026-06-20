@@ -25,3 +25,12 @@ logs_v7_fresh_ultra_relaxed/
 logs_v8_from_v7_finish_kill/
 model_v5_from_v2_ultra_relaxed/
 model_v7_fresh_ultra_relaxed/
+logs_v10_from_v9_no_exploit/
+logs_v11_from_v10_heavy_penalty/
+logs_v9_from_v8_balanced_finish/
+model_v10_from_v9_no_exploit/
+model_v8_from_v7_finish_kill/
+model_v9_from_v8_balanced_finish/
+continue_v10_to_v11.py
+continue_v8_to_v9.py
+continue_v9_to_v10.py
