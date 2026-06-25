@@ -88,19 +88,20 @@ def reward_components(prev_my_state, prev_enemy_state, my_state, enemy_state):
         comps["death"] = 0.0
 
     my_speed = np.linalg.norm(my_state[6:9])
-    if my_speed < 8.0:
-        comps["speed"] = -1.0
-    elif 10.0 <= my_speed <= 28.0:
-        comps["speed"] = 0.3
+    # junior_dynamics需要更高速度维持升力
+    if my_speed < 15.0:  # 提高下限（原8.0）
+        comps["speed"] = -2.0  # 加重惩罚，避免失速
+    elif 18.0 <= my_speed <= 35.0:  # 调整最佳速度区间
+        comps["speed"] = 0.5
     else:
         comps["speed"] = -0.2
 
-    if distance < 120.0 and my_speed > 32.0:
+    if distance < 120.0 and my_speed > 40.0:  # 放宽上限（原32.0）
         comps["close_fast"] = -0.9
     else:
         comps["close_fast"] = 0.0
 
-    controlled_speed = max(0.0, 1.0 - abs(my_speed - 18.0) / 18.0)
+    controlled_speed = max(0.0, 1.0 - abs(my_speed - 22.0) / 22.0)  # 目标速度提高到22（原18）
     controlled_closing = max(0.0, 1.0 - abs(closing_speed) / 18.0)
     hold_score = max(alignment, 0.0) * np.exp(-lateral_error / 12.0) * controlled_speed * controlled_closing
     if 25.0 <= distance <= 95.0 and forward_dist > 0.0:
@@ -109,9 +110,9 @@ def reward_components(prev_my_state, prev_enemy_state, my_state, enemy_state):
         comps["hold_fire"] = 0.0
 
     altitude = my_state[2]
-    if altitude < 8.0:
-        comps["altitude"] = -3.0
-    elif altitude > 260.0:
+    if altitude < 10.0:  # 提高下限（原8.0），防止触地
+        comps["altitude"] = -5.0  # 加重惩罚
+    elif altitude > 280.0:  # 放宽上限（原260.0）
         comps["altitude"] = -1.0
     else:
         comps["altitude"] = 0.0

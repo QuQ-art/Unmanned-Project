@@ -27,15 +27,15 @@ def generate_initial_state(config=None):
     # 我方战机位置：设置在原点附近
     my_initial_state[0] = 0.0      # x坐标
     my_initial_state[1] = 0.0      # y坐标
-    my_initial_state[2] = 50.0     # z坐标（高度500m）
+    my_initial_state[2] = 60.0     # z坐标（高度600m，junior_dynamics需要更高以防掉高度）
 
     # 我方战机姿态：水平飞行，朝向+x方向
     my_initial_state[3] = 0.0      # roll (φ)
     my_initial_state[4] = 0.0      # pitch (θ)
     my_initial_state[5] = 0.0      # yaw (ψ) - 朝向+x方向
 
-    # 我方战机线速度：初始有一定速度
-    my_initial_state[6] = float(config.get("my_initial_speed", 16.0))  # u - 前向速度
+    # 我方战机线速度：junior_dynamics需要更高初速度以产生足够升力
+    my_initial_state[6] = float(config.get("my_initial_speed", 25.0))  # u - 前向速度（提高到25，避免失速）
     my_initial_state[7] = 0.0      # v
     my_initial_state[8] = 0.0      # w
 
@@ -49,10 +49,10 @@ def generate_initial_state(config=None):
     if random_initial:
         # 初始包会被转成 int32，所以这里使用整数位置，避免小数被截断后分布异常。
         x_min = int(config.get("enemy_x_min", 100))
-        x_max = int(config.get("enemy_x_max", 126))
-        y_abs = int(config.get("enemy_y_abs", 12))
-        z_min = int(config.get("enemy_z_min", 47))
-        z_max = int(config.get("enemy_z_max", 55))
+        x_max = int(config.get("enemy_x_max", 115))  # 100-115单位，即1000-1150m
+        y_abs = int(config.get("enemy_y_abs", 5))   # y范围 -50m到+50m，即-5到+5单位
+        z_min = int(config.get("enemy_z_min", 58))  # 提高高度到580m
+        z_max = int(config.get("enemy_z_max", 61))  # 提高高度到610m
 
         enemy_initial_state[0] = float(rng.integers(x_min, x_max))
         enemy_initial_state[1] = float(rng.integers(-y_abs, y_abs + 1))
@@ -60,14 +60,14 @@ def generate_initial_state(config=None):
     else:
         enemy_initial_state[0] = 100.0
         enemy_initial_state[1] = 0.0
-        enemy_initial_state[2] = 50.0
+        enemy_initial_state[2] = 60.0  # 匹配我方高度
 
     # 敌方靶机姿态：固定朝向（面对我方）
     enemy_initial_state[3] = 0.0      # roll
     enemy_initial_state[4] = 0.0      # pitch
     enemy_initial_state[5] = np.pi    # yaw（朝向-x方向）
 
-    # 敌方靶机线速度：完全静止（符合"静止靶机"要求）
+    # 敌方靶机线速度：完全静止（符合作业要求：静止靶机）
     enemy_initial_state[6] = 0.0      # u
     enemy_initial_state[7] = 0.0      # v
     enemy_initial_state[8] = 0.0      # w

@@ -118,17 +118,6 @@ class TrainEnv(gymnasium.Env):
         super().reset(seed=seed)
         self.adaptor.reconnect()
         init_config = dict(self.config)
-        easy_resets = int(init_config.get("curriculum_easy_resets", 0))
-        medium_resets = int(init_config.get("curriculum_medium_resets", 0))
-        if self.reset_count < easy_resets:
-            init_config["random_initial"] = False
-        elif self.reset_count < easy_resets + medium_resets:
-            init_config["random_initial"] = True
-            init_config["enemy_x_min"] = 100
-            init_config["enemy_x_max"] = 116
-            init_config["enemy_y_abs"] = 6
-            init_config["enemy_z_min"] = 49
-            init_config["enemy_z_max"] = 53
         self.reset_count += 1
 
         new_initial_packet = pack_initial(initialize.generate_initial_state(init_config))

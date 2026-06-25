@@ -59,10 +59,21 @@ def marshal_action(action, my_state=None, enemy_state=None, config=None):
 
     real_action = np.zeros(4, dtype=np.float64)
 
-    throttle = 0.15 + 0.325 * (action[0] + 1.0)
+    # 根据配置文件的 dynamics_type 判断
+    cfg = config or {}
+    dynamics_type = cfg.get("dynamics_type", "simple")  # 默认simple
+    use_high_throttle = (dynamics_type == "junior" or dynamics_type == "jsbsim")
 
-    throttle_low = 0.15
-    throttle_high = 0.80
+    if use_high_throttle:
+        # junior/jsbsim_dynamics: 需要更高油门对抗重力
+        throttle = 0.35 + 0.35 * (action[0] + 1.0)  # 范围[0.35, 1.05]
+        throttle_low = 0.25
+        throttle_high = 0.95
+    else:
+        # simple_dynamics: 原始较低油门
+        throttle = 0.15 + 0.325 * (action[0] + 1.0)  # 范围[0.15, 0.80]
+        throttle_low = 0.15
+        throttle_high = 0.80
     distance = None
     rel_body = None
     alignment = None
@@ -70,17 +81,30 @@ def marshal_action(action, my_state=None, enemy_state=None, config=None):
         distance, rel_body, alignment = _target_geometry(my_state, enemy_state)
         speed = np.linalg.norm(my_state[6:9])
 
-        if distance < 55.0:
-            throttle_low, throttle_high = 0.00, 0.10
-        elif distance < 70.0:
-            throttle_low, throttle_high = 0.00, 0.15
-        elif distance < 95.0:
-            throttle_low, throttle_high = 0.03, 0.25
-        elif distance < 130.0:
-            throttle_low, throttle_high = 0.15, 0.60
+        # 根据距离调整油门范围
+        if use_high_throttle:
+            # junior_dynamics: 更高的油门范围
+            if distance < 55.0:
+                throttle_low, throttle_high = 0.10, 0.25
+            elif distance < 70.0:
+                throttle_low, throttle_high = 0.15, 0.35
+            elif distance < 95.0:
+                throttle_low, throttle_high = 0.20, 0.50
+            elif distance < 130.0:
+                throttle_low, throttle_high = 0.30, 0.75
+        else:
+            # simple_dynamics: 原始油门范围
+            if distance < 55.0:
+                throttle_low, throttle_high = 0.00, 0.10
+            elif distance < 70.0:
+                throttle_low, throttle_high = 0.00, 0.15
+            elif distance < 95.0:
+                throttle_low, throttle_high = 0.03, 0.25
+            elif distance < 130.0:
+                throttle_low, throttle_high = 0.15, 0.60
 
         if distance < 130.0 and speed > 35.0:
-            throttle_high = min(throttle_high, 0.12)
+            throttle_high = min(throttle_high, 0.25 if use_high_throttle else 0.12)
 
     real_action[0] = np.clip(throttle, throttle_low, throttle_high)
 
